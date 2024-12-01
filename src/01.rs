@@ -1,5 +1,8 @@
+use std::collections::HashMap;
+
 fn main() {
-    part1()
+    part1();
+    part2();
 }
 
 fn part1() {
@@ -17,6 +20,29 @@ fn part1() {
 
     let result: i64 = left.iter().zip(right).map(|(a, b)| (a - b).abs()).sum();
     println!("{result}");
+}
+
+fn part2() {
+    let (left, right): (Vec<_>, Vec<_>) = input()
+        .trim()
+        .lines()
+        .map(|line| {
+            let (left, right) = line.trim().split_once("   ").unwrap();
+            (left.parse::<i64>().unwrap(), right.parse::<i64>().unwrap())
+        })
+        .unzip();
+
+    let mut counts: HashMap<i64, i64> = HashMap::new();
+    for digit in right {
+        let entry = counts.entry(digit).or_default();
+        *entry += 1
+    }
+
+    let mut sum = 0;
+    for digit in left {
+        sum += digit * counts.get(&digit).unwrap_or(&0)
+    }
+    println!("Part 2 is {sum}");
 }
 
 fn input() -> &'static str {
