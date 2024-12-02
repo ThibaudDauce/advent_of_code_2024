@@ -2,6 +2,17 @@ use std::cmp::Ordering;
 
 fn main() {
     part1(input());
+    part2(
+        "
+    7 6 4 2 1
+1 2 7 8 9
+9 7 6 2 1
+1 3 2 4 5
+8 6 4 4 1
+1 3 6 7 9
+    ",
+    );
+    part2(input());
 }
 
 fn part1(input: &'static str) {
@@ -13,40 +24,80 @@ fn part1(input: &'static str) {
                 .split(' ')
                 .map(|digit| digit.parse::<i64>().unwrap())
         })
-        .filter(is_safe)
+        .filter(|reports| is_safe(reports, None))
         .count();
 
     println!("Part 1 is {result}");
 }
 
-fn is_safe<I>(report: &I) -> bool
+fn part2(input: &'static str) {
+    let result = input
+        .trim()
+        .lines()
+        .map(|line| {
+            line.trim()
+                .split(' ')
+                .map(|digit| digit.parse::<i64>().unwrap())
+        })
+        .filter(is_safe_with_tolerance)
+        .count();
+
+    println!("Part 2 is {result}");
+}
+
+fn is_safe<I>(report: &I, skip: Option<usize>) -> bool
 where
     I: Iterator<Item = i64> + Clone,
 {
-    let mut report = report.clone();
-    let mut previous = report.next().unwrap();
+    let report = report.clone();
+    let mut previous = None;
     let mut direction: Option<Ordering> = None;
-    for digit in report {
-        if digit == previous {
-            return false;
+    for (index, digit) in report.enumerate() {
+        if let Some(skip) = skip {
+            if skip == index {
+                continue;
+            }
         }
 
-        if let Some(direction) = direction {
-            if direction != digit.cmp(&previous) {
+        if let Some(previous) = previous {
+            if digit == previous {
                 return false;
             }
-        } else {
-            direction = Some(digit.cmp(&previous));
+
+            if let Some(direction) = direction {
+                if direction != digit.cmp(&previous) {
+                    return false;
+                }
+            } else {
+                direction = Some(digit.cmp(&previous));
+            }
+
+            if (digit - previous).abs() > 3 {
+                return false;
+            }
         }
 
-        if (digit - previous).abs() > 3 {
-            return false;
-        }
-
-        previous = digit;
+        previous = Some(digit);
     }
 
     true
+}
+
+fn is_safe_with_tolerance<I>(report: &I) -> bool
+where
+    I: Iterator<Item = i64> + Clone,
+{
+    if is_safe(report, None) {
+        return true;
+    }
+
+    for i in 0..report.clone().count() {
+        if is_safe(report, Some(i)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 fn input() -> &'static str {
