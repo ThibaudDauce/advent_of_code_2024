@@ -2,6 +2,7 @@ use regex::Regex;
 
 fn main() {
     part1();
+    part2();
 }
 
 fn part1() {
@@ -11,6 +12,41 @@ fn part1() {
         sum += left.parse::<u64>().unwrap() * right.parse::<u64>().unwrap();
     }
     println!("Part 1 is {sum}");
+}
+
+fn part2() {
+    let mut sum = 0;
+    let mut enabled = true;
+    let re = Regex::new(r"^mul\((\d{1,3}),(\d{1,3})\)").unwrap();
+
+    let mut input = input();
+    while !input.is_empty() {
+        if input.starts_with("do()") {
+            enabled = true;
+            input = &input["do()".len()..];
+            continue;
+        }
+
+        if input.starts_with("don't()") {
+            enabled = false;
+            input = &input["don't()".len()..];
+            continue;
+        }
+
+        if enabled {
+            let Some(caps) = re.captures(input) else {
+                input = &input[1..];
+                continue;
+            };
+
+            sum += caps[1].parse::<u64>().unwrap() * caps[2].parse::<u64>().unwrap();
+            input = &input[caps[0].len()..];
+        } else {
+            input = &input[1..];
+        }
+    }
+
+    println!("Part 2 is {sum}");
 }
 
 fn input() -> &'static str {
