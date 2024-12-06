@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 fn main() {
     part1();
+    part2();
 }
 
 const XMAS: [&str; 2] = ["XMAS", "SAMX"];
@@ -87,6 +88,49 @@ fn search(
             *search = XMAS[index];
         }
     }
+}
+
+fn part2() {
+    let map: HashMap<_, _> = input()
+        .trim()
+        .lines()
+        .enumerate()
+        .flat_map(|(y, line)| {
+            line.chars()
+                .enumerate()
+                .map(move |(x, char)| ((x as i64, y as i64), char))
+        })
+        .collect();
+
+    let x_max = *map.keys().map(|(x, _)| x).max().unwrap();
+    let y_max = *map.keys().map(|(_, y)| y).max().unwrap();
+
+    let mut count = 0;
+
+    for x in 0..=x_max {
+        for y in 0..=y_max {
+            let char = *map.get(&(x, y)).unwrap_or(&'.');
+
+            if char != 'A' {
+                continue;
+            }
+
+            let diag1 = (*map.get(&(x - 1, y - 1)).unwrap_or(&'.') == 'M'
+                && *map.get(&(x + 1, y + 1)).unwrap_or(&'.') == 'S')
+                || (*map.get(&(x - 1, y - 1)).unwrap_or(&'.') == 'S'
+                    && *map.get(&(x + 1, y + 1)).unwrap_or(&'.') == 'M');
+            let diag2 = (*map.get(&(x - 1, y + 1)).unwrap_or(&'.') == 'M'
+                && *map.get(&(x + 1, y - 1)).unwrap_or(&'.') == 'S')
+                || (*map.get(&(x - 1, y + 1)).unwrap_or(&'.') == 'S'
+                    && *map.get(&(x + 1, y - 1)).unwrap_or(&'.') == 'M');
+
+            if diag1 && diag2 {
+                count += 1;
+            }
+        }
+    }
+
+    println!("Part 2 is {count}");
 }
 
 fn input() -> &'static str {
