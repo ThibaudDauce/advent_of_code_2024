@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 fn main() {
     part1();
+    part2();
 }
 
 fn part1() {
@@ -42,6 +43,64 @@ fn part1() {
         .filter(|(x, y)| *x >= 0 && *x <= max_x && *y >= 0 && *y <= max_y)
         .count();
     println!("Part 1 is {result}");
+}
+
+fn part2() {
+    let mut max_x = None;
+    let mut max_y = None;
+    let mut antennas: HashMap<char, Vec<(i64, i64)>> = HashMap::new();
+    let mut antinodes: HashSet<(i64, i64)> = HashSet::new();
+
+    for (y, line) in input().trim().lines().enumerate() {
+        max_y = Some(y);
+        for (x, char) in line.trim().chars().enumerate() {
+            max_x = Some(x);
+
+            if char != '.' {
+                let entry = antennas.entry(char).or_default();
+                entry.push((x as i64, y as i64));
+            }
+        }
+    }
+
+    let max_x = max_x.unwrap() as i64;
+    let max_y = max_y.unwrap() as i64;
+
+    for (_, positions) in antennas {
+        for i in 0..positions.len() {
+            let position = positions[i];
+            for other in &positions[i + 1..] {
+                let diff = (other.0 - position.0, other.1 - position.1);
+
+                for i in 0.. {
+                    let antinode = (other.0 + i * diff.0, other.1 + i * diff.1);
+                    if antinode.0 >= 0
+                        && antinode.0 <= max_x
+                        && antinode.1 >= 0
+                        && antinode.1 <= max_y
+                    {
+                        antinodes.insert(antinode);
+                    } else {
+                        break;
+                    }
+                }
+                for i in 0.. {
+                    let antinode = (other.0 - i * diff.0, other.1 - i * diff.1);
+                    if antinode.0 >= 0
+                        && antinode.0 <= max_x
+                        && antinode.1 >= 0
+                        && antinode.1 <= max_y
+                    {
+                        antinodes.insert(antinode);
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    println!("Part 2 is {}", antinodes.len());
 }
 
 fn example() -> &'static str {
