@@ -20,6 +20,8 @@ fn part1() {
         entry.push(x);
     }
 
+    let mut part2_sets: Vec<HashSet<usize>> = vec![];
+
     'main: for print in prints.lines() {
         let mut printed = HashSet::new();
         let pages: Vec<usize> = print.split(',').map(|page| page.parse().unwrap()).collect();
@@ -34,6 +36,7 @@ fn part1() {
                 }
 
                 if !printed.contains(need) {
+                    part2_sets.push(pages.into_iter().collect());
                     continue 'main;
                 }
             }
@@ -45,6 +48,73 @@ fn part1() {
     }
 
     println!("Part 1 is {sum}");
+
+    let mut part2_sum = 0;
+    for set in part2_sets.iter_mut() {
+        let mut order: Vec<usize> = vec![];
+
+        while !set.is_empty() {
+            let found = set
+                .iter()
+                .find(|page| {
+                    let empty = vec![];
+                    let dependencies = rules.get(&page).unwrap_or(&empty);
+
+                    for dependency in dependencies {
+                        if !set.contains(dependency) {
+                            continue;
+                        }
+                        if !order.contains(dependency) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                })
+                .unwrap()
+                .clone();
+
+            set.remove(&found);
+            order.push(found);
+        }
+
+        part2_sum += order[(order.len() - 1) / 2]
+    }
+
+    println!("Part 2 is {part2_sum}");
+}
+
+fn example() -> &'static str {
+    "
+    47|53
+97|13
+97|61
+97|47
+75|29
+61|13
+75|53
+29|13
+97|29
+53|29
+61|53
+97|53
+61|29
+47|13
+75|47
+97|75
+47|61
+75|61
+47|29
+75|13
+53|13
+
+75,47,61,53,29
+97,61,53,29,13
+75,29,13
+75,97,47,61,53
+61,13,29
+97,13,75,29,47
+    "
 }
 
 fn input() -> &'static str {
