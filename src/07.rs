@@ -3,7 +3,8 @@ fn main() {
 }
 
 fn part1() {
-    let mut sum = 0;
+    let mut sum_part1 = 0;
+    let mut sum_part2 = 0;
     for line in input().trim().lines() {
         let (goal, list) = line.trim().split_once(": ").unwrap();
         let goal: usize = goal.parse().unwrap();
@@ -12,25 +13,39 @@ fn part1() {
             .map(|value| value.parse().unwrap())
             .collect();
 
-        if can_match_goal(goal, 0, &values) {
-            sum += goal;
+        if can_match_goal(goal, 0, &values, false) {
+            sum_part1 += goal;
+        }
+        if can_match_goal(goal, 0, &values, true) {
+            sum_part2 += goal;
         }
     }
 
-    println!("Part 1 is {sum}");
+    println!("Part 1 is {sum_part1}");
+    println!("Part 2 is {sum_part2}");
 }
 
-fn can_match_goal(goal: usize, result: usize, values: &[usize]) -> bool {
+fn can_match_goal(goal: usize, result: usize, values: &[usize], concatenation: bool) -> bool {
     if values.is_empty() {
         return goal == result;
     }
 
-    // if result >= goal && !values.contains(&0) {
+    // if result > goal && !values.contains(&0) {
     //     return false;
     // }
 
-    return can_match_goal(goal, result + values[0], &values[1..])
-        || can_match_goal(goal, result * values[0], &values[1..]);
+    let matching = can_match_goal(goal, result + values[0], &values[1..], concatenation)
+        || can_match_goal(goal, result * values[0], &values[1..], concatenation);
+
+    if concatenation {
+        let number_of_digits = (values[0] as f64).log10().floor() as u32 + 1;
+        let number_of_digits = values[0].to_string().len();
+        let concat = 10_usize.pow(number_of_digits as u32) * result + values[0];
+
+        return matching || can_match_goal(goal, concat, &values[1..], concatenation);
+    } else {
+        return matching;
+    }
 }
 
 fn example() -> &'static str {
