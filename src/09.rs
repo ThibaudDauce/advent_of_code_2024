@@ -1,18 +1,20 @@
 fn main() {
     part1();
+    part2();
 }
 
+#[derive(Clone)]
 struct Bloc {
     size: usize,
     id: Option<usize>,
 }
 
-fn part1() {
+fn parse_disk(input: &'static str) -> Vec<Bloc> {
     let mut disk = vec![];
     let mut id = 0;
     let mut is_free_space = false;
 
-    for char in input().trim().chars() {
+    for char in input.trim().chars() {
         let digit = char.to_digit(10).unwrap() as usize;
 
         if is_free_space {
@@ -31,6 +33,11 @@ fn part1() {
         }
     }
 
+    return disk;
+}
+
+fn part1() {
+    let mut disk = parse_disk(input());
     // print(&disk);
 
     'main: loop {
@@ -70,20 +77,75 @@ fn part1() {
 
     // print(&disk);
 
+    let sum = compte_checksum(disk);
+
+    println!("Part 1 is {sum}");
+}
+
+fn compte_checksum(disk: Vec<Bloc>) -> usize {
     let mut sum = 0;
     let mut index = 0;
     for bloc in disk {
-        if let Some(id) = bloc.id {
-            for _ in 0..bloc.size {
-                sum += index * id;
-                index += 1;
-            }
-        } else {
-            panic!("No?");
+        for _ in 0..bloc.size {
+            sum += index * bloc.id.unwrap_or(0);
+            index += 1;
         }
     }
 
-    println!("Part 1 is {sum}");
+    return sum;
+}
+
+fn part2() {
+    let mut disk = parse_disk(input());
+    // print(&disk);
+
+    let max_id = disk.iter().filter_map(|bloc| bloc.id).max().unwrap();
+    dbg!(max_id);
+    for id in (0..=max_id).rev() {
+        let mut bloc_index = None;
+
+        for (index, test_bloc) in disk.iter().enumerate().rev() {
+            if test_bloc.id == Some(id) {
+                bloc_index = Some(index);
+                break;
+            }
+        }
+
+        let bloc_index = bloc_index.unwrap();
+
+        for index in 0..bloc_index {
+            if disk[index].id.is_some() {
+                continue;
+            }
+
+            let free_space = disk[index].size;
+            if free_space < disk[bloc_index].size {
+                continue;
+            }
+
+            if free_space == disk[bloc_index].size {
+                disk[index] = disk[bloc_index].clone();
+                disk[bloc_index].id = None;
+            } else {
+                disk[index] = disk[bloc_index].clone();
+                disk.insert(
+                    index + 1,
+                    Bloc {
+                        id: None,
+                        size: free_space - disk[index].size,
+                    },
+                );
+                disk[bloc_index + 1].id = None;
+            }
+            break;
+        }
+    }
+
+    // print(&disk);
+
+    let sum = compte_checksum(disk);
+
+    println!("Part 2 is {sum}");
 }
 
 fn print(blocs: &[Bloc]) {
