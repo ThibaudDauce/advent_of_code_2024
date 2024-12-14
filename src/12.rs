@@ -1,7 +1,17 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    cmp,
+    collections::{HashMap, HashSet},
+};
 
 fn main() {
-    part1();
+    // part1();
+    part2();
+}
+
+#[derive(Default, Debug)]
+struct Fences {
+    verticals: HashMap<i64, Vec<i64>>,
+    horizontals: HashMap<i64, Vec<i64>>,
 }
 
 fn part1() {
@@ -22,10 +32,90 @@ fn part1() {
 
     for (coordinates, value) in &map {
         let (fences, area) = visit(&mut visited, &map, *coordinates, *value);
-        sum += fences * area;
+        sum += (fences
+            .verticals
+            .values()
+            .map(|values| values.len())
+            .sum::<usize>()
+            + fences
+                .horizontals
+                .values()
+                .map(|values| values.len())
+                .sum::<usize>())
+            * area;
     }
 
     println!("Part 1 is {sum}");
+}
+
+fn part2() {
+    let map: HashMap<_, _> = input()
+        .trim()
+        .lines()
+        .enumerate()
+        .flat_map(|(y, line)| {
+            line.trim()
+                .chars()
+                .enumerate()
+                .map(move |(x, char)| ((x as i64, y as i64), char))
+        })
+        .collect();
+
+    let mut visited = HashSet::new();
+    let mut sum = 0;
+
+    for (coordinates, value) in &map {
+        let (mut fences, area) = visit(&mut visited, &map, *coordinates, *value);
+
+        let result = number_of_fences(&map, true, &mut fences.verticals)
+            + number_of_fences(&map, false, &mut fences.horizontals);
+
+        sum += result * area;
+    }
+
+    println!("Part 2 is {sum}");
+}
+
+fn merge(left: &mut HashMap<i64, Vec<i64>>, right: &HashMap<i64, Vec<i64>>) {
+    for (index, values) in right {
+        let entry = left.entry(*index).or_default();
+        entry.extend(values);
+    }
+}
+fn number_of_fences(
+    map: &HashMap<(i64, i64), char>,
+    vertical: bool,
+    fences: &mut HashMap<i64, Vec<i64>>,
+) -> usize {
+    let mut result = 0;
+    for (index, values) in fences.iter_mut() {
+        values.sort();
+        let mut previous: Option<i64> = None;
+        for value in values {
+            if let Some(previous) = previous {
+                let (a, b) = if vertical {
+                    let a = map.get(&(index - 1, previous)) == map.get(&(index - 1, *value));
+                    let b = map.get(&(*index, previous)) == map.get(&(*index, *value));
+
+                    (a, b)
+                } else {
+                    let a = map.get(&(previous, index - 1)) == map.get(&(*value, index - 1));
+                    let b = map.get(&(previous, *index)) == map.get(&(*value, *index));
+
+                    (a, b)
+                };
+
+                if !(*value == previous + 1 && (a || b)) {
+                    result += 1;
+                }
+            } else {
+                result += 1;
+            }
+            previous = Some(*value);
+        }
+    }
+
+    result
 }
 
 fn visit(
@@ -33,13 +123,13 @@ fn visit(
     map: &HashMap<(i64, i64), char>,
     position: (i64, i64),
     value: char,
-) -> (usize, usize) {
+) -> (Fences, usize) {
     if visited.contains(&position) {
-        return (0, 0);
+        return (Fences::default(), 0);
     }
 
     visited.insert(position);
-    let mut fences = 0;
+    let mut fences = Fences::default();
     let mut area = 1;
 
     for (x, y) in [(0, -1), (1, 0), (0, 1), (-1, 0)] {
@@ -47,13 +137,38 @@ fn visit(
         if let Some(other) = map.get(&new_position) {
             if *other == value {
                 let (new_fences, new_area) = visit(visited, map, new_position, *other);
-                fences += new_fences;
+                merge(&mut fences.verticals, &new_fences.verticals);
+                merge(&mut fences.horizontals, &new_fences.horizontals);
                 area += new_area;
             } else {
-                fences += 1;
+                if new_position.0 == position.0 {
+                    let entry = fences
+                        .horizontals
+                        .entry(cmp::max(new_position.1, position.1))
+                        .or_default();
+                    entry.push(position.0);
+                } else {
+                    let entry = fences
+                        .verticals
+                        .entry(cmp::max(new_position.0, position.0))
+                        .or_default();
+                    entry.push(position.1);
+                }
             }
         } else {
-            fences += 1;
+            if new_position.0 == position.0 {
+                let entry = fences
+                    .horizontals
+                    .entry(cmp::max(new_position.1, position.1))
+                    .or_default();
+                entry.push(position.0);
+            } else {
+                let entry = fences
+                    .verticals
+                    .entry(cmp::max(new_position.0, position.0))
+                    .or_default();
+                entry.push(position.1);
+            }
         }
     }
 
