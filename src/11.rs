@@ -1,39 +1,57 @@
+use std::collections::HashMap;
+
 fn main() {
-    part1();
+    let result = compute(INPUT, 25);
+    println!("Part 1 is {result}");
+
+    let result = compute(INPUT, 75);
+    println!("Part 2 is {result}");
 }
 
-fn part1() {
-    let mut stones: Vec<usize> = INPUT
+fn compute(input: &'static str, count: usize) -> usize {
+    let stones: Vec<usize> = input
         .trim()
         .split(' ')
         .map(|digit| digit.parse().unwrap())
         .collect();
 
-    for _ in 0..25 {
-        let mut adds = 0;
-        for i in 0..stones.len() {
-            let value = stones[i + adds];
-            if value == 0 {
-                stones[i + adds] = 1;
-            } else {
-                let number_of_digits = (value as f64).log10().floor() as u32 + 1;
-                if number_of_digits % 2 == 0 {
-                    let divider = 10_usize.pow(number_of_digits as u32 / 2);
+    let mut cache = HashMap::new();
 
-                    let left = value / divider;
-                    let right = value % divider;
-
-                    stones[i + adds] = left;
-                    stones.insert(i + adds + 1, right);
-                    adds += 1;
-                } else {
-                    stones[i + adds] *= 2024;
-                }
-            }
-        }
+    let mut sum = 0;
+    for stone in stones {
+        sum += blink(&mut cache, stone, count);
     }
 
-    println!("Part 1 is {}", stones.len());
+    return sum;
+}
+
+fn blink(cache: &mut HashMap<(usize, usize), usize>, value: usize, count: usize) -> usize {
+    if count == 0 {
+        return 1;
+    }
+
+    if let Some(result) = cache.get(&(value, count)) {
+        return *result;
+    }
+
+    let result = if value == 0 {
+        blink(cache, 1, count - 1)
+    } else {
+        let number_of_digits = (value as f64).log10().floor() as u32 + 1;
+        if number_of_digits % 2 == 0 {
+            let divider = 10_usize.pow(number_of_digits as u32 / 2);
+
+            let left = value / divider;
+            let right = value % divider;
+
+            blink(cache, left, count - 1) + blink(cache, right, count - 1)
+        } else {
+            blink(cache, value * 2024, count - 1)
+        }
+    };
+
+    cache.insert((value, count), result);
+    return result;
 }
 
 const EXAMPLE: &str = "125 17";
