@@ -17,18 +17,21 @@ fn part1() {
         }
     }
 
-    let mut sum = 0;
+    let mut part1 = 0;
+    let mut part2 = 0;
     for position in positions {
         let mut tops = HashSet::new();
         let paths = get_paths(&map, vec![position]);
 
-        for path in paths {
+        for path in &paths {
             tops.insert(path.last().unwrap().clone());
         }
-        sum += tops.len();
+        part1 += tops.len();
+        part2 += paths.len();
     }
 
-    println!("Part 1 is {sum}");
+    println!("Part 1 is {part1}");
+    println!("Part 2 is {part2}");
 }
 
 type Path = Vec<(i64, i64)>;
