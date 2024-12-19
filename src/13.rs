@@ -1,9 +1,15 @@
 fn main() {
-    part1();
+    println!("Part 1 (example) is {}", compute(example(), 0));
+    println!("Part 1 is {}", compute(input(), 0));
+    println!(
+        "Part 2 (example) is {}",
+        compute(example(), 10_000_000_000_000)
+    );
+    println!("Part 2 is {}", compute(input(), 10_000_000_000_000));
 }
 
-fn part1() {
-    let blocs = input().trim().split("\n\n");
+fn compute(input: &'static str, add: usize) -> usize {
+    let blocs = input.trim().split("\n\n");
 
     let mut sum = 0;
     for bloc in blocs {
@@ -19,8 +25,8 @@ fn part1() {
             .split_once(", ")
             .unwrap();
 
-        let a_x: usize = a_x.strip_prefix("X+").unwrap().parse().unwrap();
-        let a_y: usize = a_y.strip_prefix("Y+").unwrap().parse().unwrap();
+        let a_x = a_x.strip_prefix("X+").unwrap().parse::<usize>().unwrap() as f64;
+        let a_y = a_y.strip_prefix("Y+").unwrap().parse::<usize>().unwrap() as f64;
 
         let (b_x, b_y) = button_b_line
             .strip_prefix("Button B: ")
@@ -28,8 +34,8 @@ fn part1() {
             .split_once(", ")
             .unwrap();
 
-        let b_x: usize = b_x.strip_prefix("X+").unwrap().parse().unwrap();
-        let b_y: usize = b_y.strip_prefix("Y+").unwrap().parse().unwrap();
+        let b_x = b_x.strip_prefix("X+").unwrap().parse::<usize>().unwrap() as f64;
+        let b_y = b_y.strip_prefix("Y+").unwrap().parse::<usize>().unwrap() as f64;
 
         let (prize_x, prize_y) = prize_line
             .strip_prefix("Prize: ")
@@ -37,41 +43,48 @@ fn part1() {
             .split_once(", ")
             .unwrap();
 
-        let prize_x: usize = prize_x.strip_prefix("X=").unwrap().parse().unwrap();
-        let prize_y: usize = prize_y.strip_prefix("Y=").unwrap().parse().unwrap();
+        let prize_x = (prize_x
+            .strip_prefix("X=")
+            .unwrap()
+            .parse::<usize>()
+            .unwrap()
+            + add) as f64;
+        let prize_y = (prize_y
+            .strip_prefix("Y=")
+            .unwrap()
+            .parse::<usize>()
+            .unwrap()
+            + add) as f64;
 
-        let mut min: Option<usize> = None;
-        for push_a in 0..=100 {
-            if push_a * a_x > prize_x || push_a * a_y > prize_y {
-                break;
-            }
+        // a_x * a + b_x * b = prize_x
+        // a_y * a + b_y * b = prize_y
 
-            let remaining_x = prize_x - push_a * a_x;
-            let remaining_y = prize_y - push_a * a_y;
+        let w = prize_x / a_x;
+        let u = b_x / a_x;
 
-            if remaining_x % b_x == 0 && remaining_y % b_y == 0 {
-                let push_b_x = remaining_x / b_x;
-                let push_b_y = remaining_y / b_y;
+        // a = (prize_x - b_x * b) / a_x = w - u * b
+        // a_y * (w - u * b) + b_y * b = prize_y
+        //  (b_y - a_y * u) * b = prize_y - a_y * w
+        // b = (prize_y - a_y * w) / (b_y - a_y * u)
 
-                if push_b_x == push_b_y {
-                    let cost = push_a * 3 + push_b_x;
-                    if let Some(previous_min) = min {
-                        if previous_min > cost {
-                            min = Some(cost);
-                        }
-                    } else {
-                        min = Some(cost);
-                    }
-                }
-            }
-        }
+        let b = (prize_y - a_y * w) / (b_y - a_y * u);
+        let a = w - u * b;
 
-        if let Some(min) = min {
-            sum += min;
+        let a_round = a.round();
+        let b_round = b.round();
+
+        // dbg!(a, b);
+
+        // 75325713472863
+        // 875318608908
+        // 416082282239
+
+        if (a_round - a).abs() < 0.01 && (b_round - b).abs() < 0.01 {
+            sum += a_round as usize * 3 + b_round as usize;
         }
     }
 
-    println!("Part 1 is {sum}");
+    sum
 }
 
 fn example() -> &'static str {
